@@ -10,25 +10,24 @@ export const Landing = () => {
   const [waiting, setWaiting] = useState(false);
 
   useEffect(() => {
-    if(!socket) return ;
+    if (!socket) return;
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
 
-      if(message.type === "waiting") {
+      if (message.type === "waiting") {
         setWaiting(true);
-    }
+      }
 
-    if(message.type === INIT_GAME) {
-      navigate("/game");
-    }
-  };
+      if (message.type === INIT_GAME) {
+        navigate("/game");
+      }
+    };
   }, [socket]);
 
-  if(!socket) {
+  if (!socket) {
     return <div className="text-white text-center pt-8">Connecting...</div>;
   }
-
 
   return (
     <div className="flex justify-center">
@@ -45,9 +44,11 @@ export const Landing = () => {
             </div>
 
             <div className="mt-8 flex justify-center">
-              <Button onClick={() => navigate("/game")}>
-                Play Now
-              </Button>
+              {waiting ? (
+                <p className="text-white text-xl"> Waiting for opponent...</p>
+              ) : (
+                <Button onClick={() => navigate("/game")}>Play Now</Button>
+              )}
             </div>
           </div>
         </div>

@@ -237,10 +237,16 @@ export const Game = () => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log(message);
+    const handler = (event: MessageEvent) => {
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch (e) {
+        console.error("Failed to parse socket message:", e);
+        return;
+      }
 
+      console.log(message);
       switch (message.type) {
         case "waiting": {
           setStatusMessage("Waiting for opponent...");
@@ -324,19 +330,16 @@ export const Game = () => {
 
             const currentPlayer =
               newChess.turn() === "w" ? whitePlayer : blackPlayer;
-
-            // ADD CHECK DETECTION
-            if (inCheck) {
-              setStatusMessage(`⚠️ CHECK! ${currentPlayer}'s turn`);
-            } else {
-              setStatusMessage(`${currentPlayer}'s turn`);
-            }
+            setStatusMessage(
+              inCheck
+                ? `⚠️ CHECK! ${currentPlayer}'s turn`
+                : `${currentPlayer}'s turn`
+            );
           } catch (e) {
             console.error("Invalid move received:", e);
           }
           break;
         }
-
         case GAME_OVER: {
           const winner = message.payload.winner;
           const reason = message.payload.reason;
@@ -388,7 +391,19 @@ export const Game = () => {
         }
       }
     };
-  }, [socket, chess, started, gameOver, whitePlayer, blackPlayer, opponentUsername]);
+    socket.addEventListener("message", handler);
+    return () => {
+      socket.removeEventListener("message", handler);
+    };
+  }, [
+    socket,
+    chess,
+    started,
+    gameOver,
+    whitePlayer,
+    blackPlayer,
+    opponentUsername,
+  ]);
 
   if (!socket) {
     return (
@@ -398,7 +413,7 @@ export const Game = () => {
     );
   }
 
-    // 👤 SHOW USERNAME MODAL FIRST
+  // 👤 SHOW USERNAME MODAL FIRST
   if (showUsernameModal) {
     return <UsernameModal onSubmit={handleUsernameSubmit} />;
   }
@@ -415,7 +430,7 @@ export const Game = () => {
     k: "/k.svg",
   };
 
-   // Get opponent display name
+  // Get opponent display name
   const opponentDisplay = started
     ? playerColor === "white"
       ? blackPlayer
@@ -434,18 +449,19 @@ export const Game = () => {
             {started && (
               <div className="w-full bg-slate-800 rounded-lg p-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                {/* Opponent Timer */}
-                <div
-                  className={`px-4 py-2 rounded font-mono text-xl font-bold ${
-                    (playerColor === "white" && chess.turn() === "b") ||
-                    (playerColor === "black" && chess.turn() === "w")
-                      ? "bg-green-600 text-white"
-                      : "bg-slate-700 text-gray-300"
-                  }`}
-                >
-                  {formatTime(playerColor === "white" ? blackTime : whiteTime)}
-                </div>
-
+                  {/* Opponent Timer */}
+                  <div
+                    className={`px-4 py-2 rounded font-mono text-xl font-bold ${
+                      (playerColor === "white" && chess.turn() === "b") ||
+                      (playerColor === "black" && chess.turn() === "w")
+                        ? "bg-green-600 text-white"
+                        : "bg-slate-700 text-gray-300"
+                    }`}
+                  >
+                    {formatTime(
+                      playerColor === "white" ? blackTime : whiteTime
+                    )}
+                  </div>
 
                   {/* 👤 PLAYER INFO */}
                   <div className="flex items-center gap-2">
@@ -462,22 +478,21 @@ export const Game = () => {
                     </div>
                   </div>
 
-
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-white font-semibold mr-2">
-                    {playerColor === "white" ? "Black" : "White"}:
-                  </span>
-                  {(playerColor === "white"
-                    ? capturedPieces.white
-                    : capturedPieces.black
-                  ).map((piece, idx) => (
-                    <img
-                      key={idx}
-                      src={pieceImages[piece]}
-                      alt={piece}
-                      className="w-6 h-6"
-                    />
-                  ))}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-white font-semibold mr-2">
+                      {playerColor === "white" ? "Black" : "White"}:
+                    </span>
+                    {(playerColor === "white"
+                      ? capturedPieces.white
+                      : capturedPieces.black
+                    ).map((piece, idx) => (
+                      <img
+                        key={idx}
+                        src={pieceImages[piece]}
+                        alt={piece}
+                        className="w-6 h-6"
+                      />
+                    ))}
                   </div>
                 </div>
                 {materialAdvantage !== 0 && (
@@ -529,7 +544,7 @@ export const Game = () => {
                     )}
                   </div>
 
-                   {/* 👤 YOUR INFO */}
+                  {/* 👤 YOUR INFO */}
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                       {myDisplay.charAt(0).toUpperCase()}
@@ -648,7 +663,6 @@ export const Game = () => {
                 </Button>
               )}
 
-             
               {drawOfferReceived && (
                 <div className="flex gap-2">
                   <Button
