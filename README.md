@@ -1,3 +1,11 @@
+⚠️ **This repository has been moved**
+   
+   This is the old frontend-only version. 
+   
+   👉 **See the full project (frontend + backend):** 
+   https://github.com/anisoni12/multiplayer-chess-game
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
