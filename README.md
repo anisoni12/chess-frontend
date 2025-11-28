@@ -3,7 +3,7 @@
    This is the old frontend-only version. 
    
    👉 **See the full project (frontend + backend):** 
-   https://github.com/anisoni12/multiplayer-chess-game
+   https://github.com/anisoni12/Multiplayer-chess-game
 
 
 # React + TypeScript + Vite
