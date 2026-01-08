@@ -5,6 +5,8 @@ import { useSocket } from "../hooks/useSocket";
 import { Chess, type PieceSymbol, type Square } from "chess.js";
 import { MoveHistory } from "../components/MoveHistory";
 import { UsernameModal } from "../components/UsernameModal";
+import { useChessSound } from "../hooks/useChessSound";
+import { GameOverModal } from "../components/GameOverModal";
 
 interface Move {
   from: string;
@@ -79,6 +81,12 @@ export const Game = () => {
   const [opponentUsername, setOpponentUsername] = useState("");
   const [whitePlayer, setWhitePlayer] = useState("");
   const [blackPlayer, setBlackPlayer] = useState("");
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [gameResult, setGameResult] = useState<{
+    winner: string;
+    reason: string;
+  }>({ winner: "", reason: "" });
+  const { playSound } = useChessSound();
 
   // Calculate captured pieces by comparing with starting position
   const calculatedCapturedPieces = (currentChess: Chess): CapturedPieces => {
@@ -289,6 +297,7 @@ export const Game = () => {
             setBlackTime(message.payload.timeControl);
           }
           console.log("Game initialized - Player color:", color);
+          playSound("gameStart");
           break;
         }
 
@@ -309,6 +318,17 @@ export const Game = () => {
             setBoard(newChess.board());
             setLastMove({ from: move.from, to: move.to });
 
+            // 🔊 PLAY SOUNDS
+            if (moveResult.captured) {
+              playSound("capture");
+            } else if (moveResult.san?.includes("O-O")) {
+              playSound("castle");
+            } else if (moveResult.promotion) {
+              playSound("promote");
+            } else {
+              playSound("move");
+            }
+
             // Add move to history
             setMoveHistory((prev) => [
               ...prev,
@@ -328,6 +348,10 @@ export const Game = () => {
             const inCheck = newChess.isCheck();
             setIsInCheck(inCheck);
 
+            if (inCheck) {
+              setTimeout(() => playSound("check"), 100);
+            }
+
             const currentPlayer =
               newChess.turn() === "w" ? whitePlayer : blackPlayer;
             setStatusMessage(
@@ -344,6 +368,9 @@ export const Game = () => {
           const winner = message.payload.winner;
           const reason = message.payload.reason;
           setGameOver(true);
+          setGameResult({ winner, reason });
+          setShowGameOverModal(true);
+          playSound("gameEnd");
 
           if (winner === "draw") {
             setStatusMessage("🤝 Game drawn by agreement!");
@@ -697,6 +724,14 @@ export const Game = () => {
           </div>
         </div>
       </div>
+       {/* Game Over Modal - ADD HERE */}
+      <GameOverModal
+        isOpen={showGameOverModal}
+        winner={gameResult.winner}
+        reason={gameResult.reason}
+        onPlayAgain={handleStartGame}
+        playerColor={playerColor}
+      />
     </div>
   );
 };
